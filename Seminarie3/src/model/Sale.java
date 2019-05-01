@@ -3,6 +3,7 @@ package model;
 import integration.AccountingSystem;
 import integration.InventorySystem;
 import integration.Printer;
+import integration.SystemCreator;
 import java.util.ArrayList;
 
 /**
@@ -10,16 +11,22 @@ import java.util.ArrayList;
  * @author Erik
  */
 public class Sale {
+    private SystemCreator creator;
     private double VAT = 0.25;
     private ArrayList<ItemDTO> itemList = new ArrayList<ItemDTO>();
+    private ArrayList<Integer> itemQuantity = new ArrayList<Integer>();
     private double runningTotal = 0.0;
     private double change;
     private double payment;
     private double totalPriceIncludingVAT;
     CashRegister cashRegister;
     boolean itemFlag = false;
-    boolean discountFlag = false;
 
+    public Sale (SystemCreator creator){
+        this.creator = creator;
+    }
+    
+    
     /**
      * addItem adds an item to an itemlist. If the itemlist is empty it simply
      * adds the item. If the itemlist contains an item of the same kind (same identifier)
@@ -31,16 +38,19 @@ public class Sale {
     public void addItem(ItemDTO item, int quantity) {	
 	if(itemList.isEmpty()) {
             itemList.add(item);
+            itemQuantity.add(quantity);
+            itemFlag = true;
 	}	
 	for(int i = 0; i < itemList.size(); i++) {
             if(itemAlreadyScanned(item, i)) {
-		itemList.get(i).updateQuantity(quantity);
+		int quantTemp = itemQuantity.get(i);
+                itemQuantity.set(i,quantTemp + quantity);
 		itemFlag = true;
             } 
 	}		
 	if(!itemFlag){ 
             itemList.add(item);
-            item.updateQuantity(quantity);
+            itemQuantity.add(quantity);
 	}
         
 	itemFlag = false;
@@ -70,8 +80,8 @@ public class Sale {
 	this.payment = payment;
 	cashRegister.addPayment(payment - change);
 	
-        InventorySystem inventorySystem = new InventorySystem();
-        AccountingSystem accountingSystem = new AccountingSystem();
+        InventorySystem inventorySystem = creator.getInventorySystem();
+        AccountingSystem accountingSystem = creator.getAccountingSystem();
         inventorySystem.saveSaleInformation(this);
         accountingSystem.saveSaleInformation(this);
         
@@ -104,7 +114,16 @@ public class Sale {
     public ArrayList<ItemDTO> getItemList() {
 	return this.itemList;
     }
-	
+
+    /**
+     * 
+     * @return The arrayList ItemQuantity, which contains the quantities for all the
+     * items.
+     */
+    public ArrayList<Integer> getItemQuantityList() {
+        return this.itemQuantity;
+    }
+    
     /**
      * 
      * @return Returns the amount of change the customer receives. This value is rounded
@@ -130,10 +149,30 @@ public class Sale {
     public double getAmountPaid() {
 	return payment;
     }
+    
+    /**
+     * 
+     * @param amount sets the itemquantity 
+     */
+    public void setItemQuantity(int i, int amount){
+        this.itemQuantity.set(i, amount);
+    }
+    
+    /**
+     * The method sets the parameter item on the specified index in the list.
+     * @param i the index in the list where something is to be set.
+     * @param item the item to be set in the list.
+     */
+    public void setItemList(int i, ItemDTO item){
+        this.itemList.set(i, item);
+    }
+    
+    
     private double totalPriceIncludingVAT (){
         this.totalPriceIncludingVAT = this.runningTotal + this.runningTotal*this.VAT;
         return totalPriceIncludingVAT;
     }
+    
     private boolean itemAlreadyScanned(ItemDTO item, int i) {
         if (item.getItemIdentifier() == itemList.get(i).getItemIdentifier() && itemFlag == false){
             return true;
