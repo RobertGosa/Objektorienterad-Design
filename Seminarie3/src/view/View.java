@@ -2,6 +2,7 @@ package view;
 
 import controller.Controller;
 import integration.Printer;
+import integration.SystemCreator;
 import java.lang.Math;
 import model.ItemDTO;
 import model.Receipt;
@@ -42,8 +43,8 @@ public class View {
     /**
      * The method represents the action of the cashier starting a new sale.
      */
-    public void runSale() {
-    	controller.startNewSale();
+    public void runSale(SystemCreator creator) {
+    	controller.startNewSale(creator);
         System.out.println("New sale was started.");
     }
     
@@ -58,14 +59,20 @@ public class View {
     public void pay(double amount) {
     	double amountPaid = amount;
     	double change = controller.pay(amount);
-    	printChange(amountPaid, change);
+        if(change > 0) {
+            printTotalPriceAndChange(amountPaid, change);
+        } else {
+            System.out.println("Insufficient ammount paid.");
+        }
+        
+    	
     }
     
     /**
      * This method represents the cashier scanning items, it also prints the
      * information about the scanned items aswell as the running total.
      */
-    public void printSaleInformation(){
+    public void addItemsAndPrintToConsole(){
         addItem(0, 2);
         addItem(0, 2);
         addItem(1, 3);
@@ -85,12 +92,14 @@ public class View {
     }
     
     private void printItemOnScreen(ItemDTO IDTO, int quantity) {
-    	double runningTotal = controller.indicateAllItemsRegistered();
+    	double runningTotal = controller.getRunningTotal();
     	System.out.println("Item: " + IDTO.getItemDescription() + " x" + quantity + " Price: " + IDTO.getPrice() * quantity + " Running Total: " + runningTotal);
     }
     
     
-    private void printChange(double amountPaid, double change) {
+    private void printTotalPriceAndChange(double amountPaid, double change) {
+        double totalPrice = controller.indicateAllItemsRegistered();
+        System.out.println("Total cost (Including VAT): " + totalPrice);
     	System.out.println("Amount paid : " + amountPaid + " Change: " + Math.round(change * 100.0) / 100.0);
     }
    

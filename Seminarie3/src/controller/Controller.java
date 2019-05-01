@@ -6,7 +6,8 @@ import model.Receipt;
 import model.Sale;
 import integration.InventorySystem;
 import integration.AccountingSystem;
-import model.SaleDTO;
+import integration.SystemCreator;
+
 
 /**
  * Controller is the class that ties together what happens in the view with what
@@ -18,7 +19,7 @@ public class Controller {
     private InventorySystem inventorySystem;
     private AccountingSystem accountingSystem;
     private CashRegister cashRegister;
-    private double totalPrice;
+    private double runningTotal;
     
     /**
     * Creates a new instance of controller with references to inventorysystem
@@ -37,8 +38,8 @@ public class Controller {
      * The method creates an instance of the Sale class. It also turns on the
      * cash Register in the grocery store.
      */
-    public void startNewSale() {
-        sale = new Sale();
+    public void startNewSale(SystemCreator creator) {
+        sale = new Sale(creator);
         sale.turnOnCashRegister();
     }
     
@@ -67,19 +68,32 @@ public class Controller {
      * @return returns the amount of change that the customer is to receive.
      */
     public double pay (double amount) {
-    	double change = sale.pay(amount);
-    	return change;
+    	 if(amount > sale.getTotalPrice()) {
+            double change = sale.pay(amount);
+            return change;
+        } else {
+            return -1.0;
+        }
     }
     
     /**
      * Represents the action of the cashier indicating that all items have been registered
      * @return Returns the price of the sale so the cashier and customer can see it.
      */
-    public double indicateAllItemsRegistered() {
-    	totalPrice = sale.getRunningTotal();
-    	return sale.getRunningTotal();
+    public double getRunningTotal() {
+    	runningTotal = sale.getRunningTotal();
+    	return runningTotal;
     }
     
+    /**
+     * The method represents the action of the cashier indicating that 
+     * all the items are registered. This means that no more items will be scanned.
+     * @return  the total price of the sale, including VAT.
+     */
+    public double indicateAllItemsRegistered() {
+        double totalPrice = sale.getTotalPrice();
+        return totalPrice;
+    }
     /**
      * Creates an instance of the receipt class, which contains all the needed
      * information about the sale.
@@ -89,4 +103,4 @@ public class Controller {
     	Receipt receipt = new Receipt(sale);
     	return receipt;
     }
-} 
+}
